@@ -2,7 +2,7 @@
   "name": "ExpenseFlow",
   "short_name": "ExpenseFlow",
   "description": "Simple personal expense tracker and analyzer",
-  "start_url": "./expense_tracker.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
