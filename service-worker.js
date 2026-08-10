@@ -1,7 +1,7 @@
 // ExpenseFlow service worker — caches the app shell so it works offline after install.
 const CACHE_NAME = 'expenseflow-cache-v1';
 const APP_SHELL = [
-  './expense_tracker.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
