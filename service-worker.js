@@ -1,5 +1,6 @@
-// ExpenseFlow service worker — caches the app shell so it works offline after install.
-const CACHE_NAME = 'expenseflow-cache-v2';
+// ExpenseFlow service worker
+const CACHE_NAME = 'expenseflow-cache-v3';
+
 const APP_SHELL = [
   './index.html',
   './manifest.json',
@@ -7,38 +8,76 @@ const APP_SHELL = [
   './icon-512.png'
 ];
 
+// Install new service worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
+
   self.skipWaiting();
 });
 
+// Remove old caches and take control immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
     )
   );
+
   self.clients.claim();
 });
 
-// Cache-first strategy: serve from cache, fall back to network, and update cache when online.
+// Handle requests
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
+  // Always try the network first for page/navigation requests.
+  // This ensures the installed app receives the newest index.html.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
         .then((response) => {
-          if (response && response.status === 200) {
+          if (response && response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put('./index.html', clone);
+            });
           }
+
           return response;
         })
-        .catch(() => cached);
-      return cached || networkFetch;
+        .catch(() => {
+          return caches.match('./index.html');
+        })
+    );
+
+    return;
+  }
+
+  // Cache-first for supporting files such as icons and manifest.
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) {
+        return cached;
+      }
+
+      return fetch(event.request).then((response) => {
+        if (response && response.ok) {
+          const clone = response.clone();
+
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, clone);
+          });
+        }
+
+        return response;
+      });
     })
   );
 });
