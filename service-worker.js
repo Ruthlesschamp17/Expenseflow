@@ -1,5 +1,5 @@
 // ExpenseFlow service worker — caches the app shell so it works offline after install.
-const CACHE_NAME = 'expenseflow-cache-v1';
+const CACHE_NAME = 'expenseflow-cache-v2';
 const APP_SHELL = [
   './index.html',
   './manifest.json',
